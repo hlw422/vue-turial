@@ -8,6 +8,7 @@ const note = ref('')
 const minutes = ref(30)
 const list = ref<Goal[]>([])
 const tab = ref<'all' | 'todo' | 'done'>('all')
+const searchQuery = ref('')
 
 const load = async () => {
   const data = await getGoalList()
@@ -45,9 +46,21 @@ const del = async (id: number) => {
 }
 
 const data = computed(() => {
-  if (tab.value === 'todo') return list.value.filter(i => !i.done)
-  if (tab.value === 'done') return list.value.filter(i => i.done)
-  return list.value
+  let filtered = list.value
+  
+  // 搜索过滤
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase()
+    filtered = filtered.filter(i => 
+      i.title.toLowerCase().includes(query) || 
+      (i.note && i.note.toLowerCase().includes(query))
+    )
+  }
+
+  // Tab 过滤
+  if (tab.value === 'todo') return filtered.filter(i => !i.done)
+  if (tab.value === 'done') return filtered.filter(i => i.done)
+  return filtered
 })
 </script>
 
@@ -82,10 +95,23 @@ const data = computed(() => {
         </div>
       </div>
 
-      <div class="flex gap-4 text-sm mb-4 text-gray-500">
-        <span @click="tab='all'" :class="{ 'text-black font-medium': tab==='all' }">全部</span>
-        <span @click="tab='todo'" :class="{ 'text-black font-medium': tab==='todo' }">在做</span>
-        <span @click="tab='done'" :class="{ 'text-black font-medium': tab==='done' }">做完了</span>
+      <div class="flex items-center gap-4 text-sm mb-4">
+        <div class="flex gap-4 text-gray-500">
+          <span @click="tab='all'" :class="{ 'text-black font-medium': tab==='all' }" class="cursor-pointer">全部</span>
+          <span @click="tab='todo'" :class="{ 'text-black font-medium': tab==='todo' }" class="cursor-pointer">在做</span>
+          <span @click="tab='done'" :class="{ 'text-black font-medium': tab==='done' }" class="cursor-pointer">做完了</span>
+        </div>
+        
+        <div class="ml-auto relative flex items-center">
+          <input 
+            v-model="searchQuery" 
+            placeholder="搜索目标..." 
+            class="pl-8 pr-3 py-1.5 text-xs bg-white border rounded-full outline-none focus:border-black transition-colors w-40"
+          />
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 absolute left-2.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
       </div>
 
       <div class="space-y-3">
